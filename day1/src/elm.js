@@ -4390,7 +4390,7 @@ var elm$core$Set$toList = function (_n0) {
 	var dict = _n0.a;
 	return elm$core$Dict$keys(dict);
 };
-var author$project$Main$initialModel = {initialInput: '', moduleList: _List_Nil, totalFuelRequired: 0};
+var author$project$Main$initialModel = {additionalFuelAccountingForFuelWeight: 0, finalFuelRequired: 0, initialInput: '', moduleList: _List_Nil, totalFuelRequired: 0};
 var elm$core$Basics$False = {$: 'False'};
 var elm$core$Basics$True = {$: 'True'};
 var elm$core$Result$isOk = function (result) {
@@ -4796,6 +4796,40 @@ var elm$core$Platform$Sub$none = elm$core$Platform$Sub$batch(_List_Nil);
 var author$project$Main$subscriptions = function (model) {
 	return elm$core$Platform$Sub$none;
 };
+var elm$core$Basics$ge = _Utils_ge;
+var author$project$Main$calculateMass = function (mass) {
+	var fuel = ((mass / 3) | 0) - 2;
+	return (fuel >= 0) ? fuel : 0;
+};
+var author$project$Main$calculateFuelForFuel = F2(
+	function (mass, fuel) {
+		calculateFuelForFuel:
+		while (true) {
+			if (mass > 0) {
+				var additionalFuel = author$project$Main$calculateMass(mass);
+				var newFuelAmount = additionalFuel + fuel;
+				if (additionalFuel >= 0) {
+					var $temp$mass = additionalFuel,
+						$temp$fuel = newFuelAmount;
+					mass = $temp$mass;
+					fuel = $temp$fuel;
+					continue calculateFuelForFuel;
+				} else {
+					return fuel;
+				}
+			} else {
+				if (!mass) {
+					return fuel;
+				} else {
+					if (mass < 0) {
+						return fuel;
+					} else {
+						return fuel;
+					}
+				}
+			}
+		}
+	});
 var author$project$Main$calculateTotalFuelRequired = function (moduleList) {
 	return A3(
 		elm$core$List$foldl,
@@ -4810,9 +4844,6 @@ var author$project$Main$Module = F2(
 	function (mass, fuel) {
 		return {fuel: fuel, mass: mass};
 	});
-var author$project$Main$calculateMass = function (mass) {
-	return ((mass / 3) | 0) - 2;
-};
 var elm$core$List$foldrHelper = F4(
 	function (fn, acc, ctr, ls) {
 		if (!ls.b) {
@@ -4909,6 +4940,10 @@ var author$project$Main$parseInputs = function (inputString) {
 	return moduleList;
 };
 var author$project$Main$puzzleInput = '75592\n56081\n141375\n103651\n132375\n90584\n94148\n85029\n95082\n148499\n108192\n97739\n60599\n140308\n125171\n129160\n143118\n98762\n103907\n115389\n127835\n57917\n72980\n88747\n86595\n130407\n116862\n84652\n112817\n136922\n51900\n76677\n146244\n121897\n99310\n136486\n84665\n117344\n88992\n83929\n74820\n56651\n74001\n88636\n51232\n57878\n114559\n58879\n145519\n83727\n111774\n146256\n123479\n86955\n64027\n59812\n59211\n85835\n58084\n113676\n119161\n106368\n137358\n85290\n81131\n124857\n51759\n82977\n138957\n146216\n147807\n72265\n60332\n136741\n110215\n89293\n148703\n73152\n93080\n140220\n68511\n77397\n51934\n100243\n92442\n135254\n98873\n51105\n118755\n79155\n89249\n137430\n142807\n86334\n117266\n149484\n89284\n63361\n52269\n111666';
+var elm$core$Debug$log = _Debug_log;
+var elm$core$List$sum = function (numbers) {
+	return A3(elm$core$List$foldl, elm$core$Basics$add, 0, numbers);
+};
 var author$project$Main$update = F2(
 	function (msg, model) {
 		if (msg.$ === 'LoadDefaultInput') {
@@ -4920,10 +4955,19 @@ var author$project$Main$update = F2(
 		} else {
 			var moduleList = author$project$Main$parseInputs(model.initialInput);
 			var totalFuel = author$project$Main$calculateTotalFuelRequired(moduleList);
+			var additionalFuelAccountingForFuelWeight = elm$core$List$sum(
+				A2(
+					elm$core$List$map,
+					function (m) {
+						return A2(author$project$Main$calculateFuelForFuel, m.fuel, 0);
+					},
+					moduleList));
+			var finalFuelRequired = totalFuel + additionalFuelAccountingForFuelWeight;
+			var msg1 = A2(elm$core$Debug$log, 'additionalFuelAccountingForFuelWeight', additionalFuelAccountingForFuelWeight);
 			return _Utils_Tuple2(
 				_Utils_update(
 					model,
-					{moduleList: moduleList, totalFuelRequired: totalFuel}),
+					{additionalFuelAccountingForFuelWeight: additionalFuelAccountingForFuelWeight, finalFuelRequired: finalFuelRequired, moduleList: moduleList, totalFuelRequired: totalFuel}),
 				elm$core$Platform$Cmd$none);
 		}
 	});
@@ -5417,6 +5461,66 @@ var author$project$Main$demoBody = function (model) {
 								[
 									elm$html$Html$text(
 									elm$core$String$fromInt(model.totalFuelRequired))
+								]))
+						])),
+					A2(
+					elm$html$Html$div,
+					_List_fromArray(
+						[
+							A2(elm$html$Html$Attributes$style, 'width', '80px')
+						]),
+					_List_fromArray(
+						[
+							A2(
+							elm$html$Html$div,
+							_List_Nil,
+							_List_fromArray(
+								[
+									A2(
+									elm$html$Html$b,
+									_List_Nil,
+									_List_fromArray(
+										[
+											elm$html$Html$text('Additional Fuel For Fuel:')
+										]))
+								])),
+							A2(
+							elm$html$Html$div,
+							_List_Nil,
+							_List_fromArray(
+								[
+									elm$html$Html$text(
+									elm$core$String$fromInt(model.additionalFuelAccountingForFuelWeight))
+								]))
+						])),
+					A2(
+					elm$html$Html$div,
+					_List_fromArray(
+						[
+							A2(elm$html$Html$Attributes$style, 'width', '80px')
+						]),
+					_List_fromArray(
+						[
+							A2(
+							elm$html$Html$div,
+							_List_Nil,
+							_List_fromArray(
+								[
+									A2(
+									elm$html$Html$b,
+									_List_Nil,
+									_List_fromArray(
+										[
+											elm$html$Html$text('Final Fuel Required:')
+										]))
+								])),
+							A2(
+							elm$html$Html$div,
+							_List_Nil,
+							_List_fromArray(
+								[
+									elm$html$Html$text(
+									elm$core$String$fromInt(model.finalFuelRequired))
 								]))
 						]))
 				])));

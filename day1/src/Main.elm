@@ -16,7 +16,9 @@ import String exposing (split)
 type alias Model =
     { initialInput : String
     , moduleList : List Module
-    , totalFuelRequired : Int }
+    , totalFuelRequired : Int
+    , additionalFuelAccountingForFuelWeight : Int
+    , finalFuelRequired : Int  }
 
 type alias Module = {
     mass : Int
@@ -26,7 +28,9 @@ initialModel : Model
 initialModel =
     { initialInput = ""
     , moduleList = []
-    , totalFuelRequired = 0 }
+    , totalFuelRequired = 0
+    , additionalFuelAccountingForFuelWeight = 0 
+    , finalFuelRequired = 0 }
 
 init : Int -> ( Model, Cmd Msg )
 init seed =
@@ -49,8 +53,27 @@ update msg model =
                     parseInputs model.initialInput
                 totalFuel =
                     calculateTotalFuelRequired moduleList
+                
+                -- additionalFuelAccountingForFuelWeight =
+                --     calculateFuelForFuel totalFuel 0
+                additionalFuelAccountingForFuelWeight =
+                    List.map (\m -> calculateFuelForFuel m.fuel 0) moduleList
+                    |> List.sum
+                msg1 = log "additionalFuelAccountingForFuelWeight" additionalFuelAccountingForFuelWeight
+
+                finalFuelRequired =
+                    totalFuel + additionalFuelAccountingForFuelWeight
+
+                -- Guess #1: 4970440, it's too high like the rent
+                -- Guess #2 - Correct!: 4967616
+
             in
-           ( { model | moduleList = moduleList, totalFuelRequired = totalFuel  } , Cmd.none )
+           ( { model 
+                | moduleList = moduleList
+                , totalFuelRequired = totalFuel
+                , additionalFuelAccountingForFuelWeight = additionalFuelAccountingForFuelWeight
+                , finalFuelRequired = finalFuelRequired }
+                , Cmd.none )
 
 parseInputs : String -> List Module
 parseInputs inputString =
@@ -68,12 +91,51 @@ parseInputs inputString =
 
 calculateMass : Int -> Int
 calculateMass mass =
-    -- floor (mass // 3) - 2
-    mass // 3 - 2
+    let
+        fuel =
+            mass // 3 - 2
+    in
+    if fuel >= 0 then
+        fuel
+    else
+        0
 
 calculateTotalFuelRequired : List Module -> Int
 calculateTotalFuelRequired moduleList =
     List.foldl (\m acc -> acc + m.fuel) 0 moduleList
+
+-- let
+--             additionalFuel =
+--                 calculateMass mass
+--             newFuelAmount = 
+--                 additionalFuel + fuel
+--             msg0 = log "0 ----" "------"
+--             msg1 = log "1 mass:" mass
+--             msg2 = log "2 fuel:" fuel
+--             msg3 = log "3 additionalFuel:" mass
+--             msg4 = log "4 newFuelAmount:" newFuelAmount
+--         in
+
+calculateFuelForFuel : Int -> Int -> Int
+calculateFuelForFuel mass fuel =
+    if mass > 0 then
+        let
+            additionalFuel =
+                calculateMass mass
+            newFuelAmount = 
+                additionalFuel + fuel
+        in
+        if additionalFuel >= 0 then
+            calculateFuelForFuel additionalFuel newFuelAmount
+        else
+            fuel
+    else if mass == 0 then
+        fuel
+    else if mass < 0 then
+        fuel
+    else
+        fuel
+
 
 -- SUBSCRIPTIONS ---------------------------------------------
 
@@ -155,6 +217,14 @@ demoBody model =
                 , div [ style "width" "80px"] [
                     div [ ] [ b [] [text "Total Fuel:"] ]
                     , div [] [ text (String.fromInt model.totalFuelRequired) ]
+                ]
+                , div [ style "width" "80px"] [
+                    div [ ] [ b [] [text "Additional Fuel For Fuel:"] ]
+                    , div [] [ text (String.fromInt model.additionalFuelAccountingForFuelWeight) ]
+                ]
+                , div [ style "width" "80px"] [
+                    div [ ] [ b [] [text "Final Fuel Required:"] ]
+                    , div [] [ text (String.fromInt model.finalFuelRequired) ]
                 ]
             ]
 
