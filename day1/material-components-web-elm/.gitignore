@@ -1,0 +1,12 @@
+*~
+demo.js
+dist
+*.d.ts
+elm.js
+elm-stuff
+gh-pages
+*.js.map
+node_modules
+src/*/component.js
+src/*/*.patch
+src/*/*.ts.orig
