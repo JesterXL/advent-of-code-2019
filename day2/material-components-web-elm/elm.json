@@ -1,0 +1,54 @@
+{
+    "type": "package",
+    "name": "aforemny/material-components-web-elm",
+    "summary": "Material Components for Elm",
+    "license": "MIT",
+    "version": "2.0.1",
+    "source-directories": [
+        "src"
+    ],
+    "exposed-modules": {
+      "Material": [
+        "Material.Button",
+        "Material.Card",
+        "Material.Checkbox",
+        "Material.Chips",
+        "Material.Dialog",
+        "Material.Drawer",
+        "Material.Elevation",
+        "Material.Fab",
+        "Material.FormField",
+        "Material.HelperText",
+        "Material.Icon",
+        "Material.IconButton",
+        "Material.IconToggle",
+        "Material.ImageList",
+        "Material.LayoutGrid",
+        "Material.LinearProgress",
+        "Material.List",
+        "Material.Menu",
+        "Material.Radio",
+        "Material.Ripple",
+        "Material.Select",
+        "Material.Slider",
+        "Material.Snackbar",
+        "Material.Switch",
+        "Material.TabBar",
+        "Material.TextArea",
+        "Material.TextField",
+        "Material.Theme",
+        "Material.TopAppBar",
+        "Material.Typography"
+      ]
+    },
+    "elm-version": "0.19.0 <= v < 0.20.0",
+    "dependencies": {
+        "elm/core": "1.0.2 <= v < 2.0.0",
+        "elm/html": "1.0.0 <= v < 2.0.0",
+        "elm/json": "1.1.2 <= v < 2.0.0",
+        "elm/svg": "1.0.1 <= v < 2.0.0",
+        "elm/url": "1.0.0 <= v < 2.0.0"
+    },
+    "test-dependencies": {
+    }
+}
