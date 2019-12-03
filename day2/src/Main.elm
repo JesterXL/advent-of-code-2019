@@ -32,18 +32,31 @@ import Array exposing (Array)
 type alias Model =
     { initialInput : String
     , intCodes : List Int
-    , processedIntCodes : List Int }
+    , processedIntCodes : List Int
+    , noun : Int
+    , verb : Int
+    , targetNounVerbProgramResult : Maybe NounVerbProgramResult
+    , challenge2Answer : Int }
 
 initialModel : Model
 initialModel =
     { initialInput = ""
     , intCodes = []
-    , processedIntCodes = [] }
+    , processedIntCodes = []
+    , noun = 0
+    , verb = 0 
+    , targetNounVerbProgramResult = Nothing
+    , challenge2Answer = 0}
 
 type Algorithm
     = AddCode
     | MultiplyCode
     | StopCode
+
+type alias NounVerbProgramResult =
+    { noun : Int
+    , verb : Int 
+    , firstPosition : Int }
 
 init : Int -> ( Model, Cmd Msg)
 init seed =
@@ -52,6 +65,7 @@ init seed =
 type Msg
     = LoadDefaultInput
     | ParseInput
+    | DetermineNounAndVerb
 
 update : Msg -> Model -> (Model, Cmd Msg )
 update msg model =
@@ -60,8 +74,14 @@ update msg model =
            ( { model | initialInput = puzzleInput }, Cmd.none)
         ParseInput ->
             let
+                -- Challenge 1
                 -- Guess #1: 3654868
-                
+
+                -- Challenge 2
+                -- find 19690720
+
+
+
                 intList = parsePuzzleInput model.initialInput
                 preProcessedIntList = preProcessOptCodes intList
                 processedList = runProgram preProcessedIntList
@@ -70,8 +90,54 @@ update msg model =
                     |> Array.get 0
                     |> Maybe.withDefault 0
                 msg1 = log "positionZero:" positionZero
+
+
             in
             ( { model | intCodes = intList, processedIntCodes = processedList }, Cmd.none )
+        DetermineNounAndVerb ->
+            let
+                -- 19690720
+
+                -- preProcessedIntList = setNounAndVerbInMemory 0 0 model.intCodes
+                -- processedList = runProgram preProcessedIntList
+                -- positionZero =
+                --     Array.fromList processedList
+                --     |> Array.get 0
+                --     |> Maybe.withDefault 0
+                -- msg1 = log "getRangeTuples" (getRangeTuples 0)
+                -- msg2 = log "getAllRangedTuples" getAllRangedTuples
+                targetNounVerbProgramResult =
+                    getAllRangedTuples
+                    |> List.foldl (\tupleList acc ->
+                                        acc ++ tryManyNounsAndVerbs model.intCodes tupleList) []
+                    |> List.filter (\result -> 
+                                        result.firstPosition == 19690720)
+                    |> List.head
+                challenge2Answer =
+                    case targetNounVerbProgramResult of
+                        Nothing ->
+                            0
+                        Just target ->
+                            100 * target.noun + target.verb
+            in
+            ( { model 
+                | targetNounVerbProgramResult = targetNounVerbProgramResult
+                , challenge2Answer = challenge2Answer }, Cmd.none)
+
+tryManyNounsAndVerbs : List Int -> List (Int, Int) -> List NounVerbProgramResult
+tryManyNounsAndVerbs intCodes listOfTuples =
+    List.foldl (\(noun, verb) acc ->
+        let
+            processedMemory =
+                setNounAndVerbInMemory noun verb intCodes
+            processedList = runProgram processedMemory
+            positionZero =
+                Array.fromList processedList
+                |> Array.get 0
+                |> Maybe.withDefault 0
+        in
+        acc ++ [NounVerbProgramResult noun verb positionZero]) [] listOfTuples
+    
 
 parsePuzzleInput : String -> List Int
 parsePuzzleInput string =
@@ -137,7 +203,7 @@ runProgram intList =
     List.foldl (\opt acc ->
         let
             algo = detectAlgorithmFromRow opt
-            msg0 = log "acc" acc
+            -- msg0 = log "acc" acc
             processed =
                 case algo of
                     AddCode ->
@@ -157,6 +223,33 @@ preProcessOptCodes intList =
         twoReplace = Array.set 2 2 twelveReplace
     in
     Array.toList twoReplace
+
+setNounAndVerbInMemory : Int -> Int -> List Int -> List Int
+setNounAndVerbInMemory noun verb intList =
+    let
+        array = Array.fromList intList
+        nounReplace = Array.set 1 noun array
+        verbReplace = Array.set 2 verb nounReplace
+    in
+    Array.toList verbReplace
+
+theURL : String
+theURL =
+    "https://jessewarden.com"
+
+getRange : List Int
+getRange =
+    List.range 0 99
+
+getRangeTuples : Int -> List (Int, Int)
+getRangeTuples index =
+    List.range 0 99
+    |> List.map (\i -> (index, i))
+
+getAllRangedTuples : List (List (Int, Int))
+getAllRangedTuples =
+    List.repeat 100 0
+    |> List.indexedMap (\i index -> getRangeTuples i)
 
 -- SUBSCRIPTIONS ---------------------------------------------
 
@@ -179,12 +272,13 @@ view model =
                     div [ style "display" "flex", style "flex-direction" "row"][
                         div [][
                             div [ headline5, style "padding" "8px" ][text "Advent of Code: Day 2"]
-                            , div [ subtitle2, style "padding-left" "8px"][text "???"]
+                            , div [ subtitle2, style "padding-left" "8px"][text "Calculate Opcodes"]
                         ]
                         , flexGrow2
                         , div [ style "padding" "12px"][ 
                             textButton { buttonConfig | onClick = Just LoadDefaultInput } "Load Input"
                             , textButton { buttonConfig | onClick = Just ParseInput } "Parse Input"
+                            , textButton { buttonConfig | onClick = Just DetermineNounAndVerb } "Find Noun and Verb"
                         ]
                     ]
                     , div [ style "display" "flex", style "flex-direction" "row" ] [
@@ -197,6 +291,18 @@ view model =
                             div [ ] [ b [] [text "Processed:"] ]
                             , div [][text (processedOptCodesToString model.processedIntCodes)]
                         ]
+                        , case model.targetNounVerbProgramResult of
+                            Nothing ->
+                                div [][]
+                            Just target ->
+                                div [ style "width" "120px" ] [
+                                    div [ ] [ b [] [text "Noun:"] ]
+                                    , div [][text (String.fromInt target.noun)]
+                                    , div [ ] [ b [] [text "Verb:"] ]
+                                    , div [][text (String.fromInt target.verb)]
+                                    , div [ ] [ b [] [text "Challenge 2 Answer:"] ]
+                                    , div [][text (String.fromInt model.challenge2Answer)]
+                                ]
                     ]
                 ]
         ]

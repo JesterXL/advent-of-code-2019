@@ -4347,6 +4347,7 @@ function _Browser_load(url)
 		}
 	}));
 }
+var elm$core$Maybe$Nothing = {$: 'Nothing'};
 var elm$core$Basics$EQ = {$: 'EQ'};
 var elm$core$Basics$LT = {$: 'LT'};
 var elm$core$Elm$JsArray$foldr = _JsArray_foldr;
@@ -4427,7 +4428,7 @@ var elm$core$Set$toList = function (_n0) {
 	var dict = _n0.a;
 	return elm$core$Dict$keys(dict);
 };
-var author$project$Main$initialModel = {initialInput: '', intCodes: _List_Nil, processedIntCodes: _List_Nil};
+var author$project$Main$initialModel = {challenge2Answer: 0, initialInput: '', intCodes: _List_Nil, noun: 0, processedIntCodes: _List_Nil, targetNounVerbProgramResult: elm$core$Maybe$Nothing, verb: 0};
 var elm$core$Basics$False = {$: 'False'};
 var elm$core$Basics$True = {$: 'True'};
 var elm$core$Result$isOk = function (result) {
@@ -4611,7 +4612,6 @@ var elm$core$Array$initialize = F2(
 var elm$core$Maybe$Just = function (a) {
 	return {$: 'Just', a: a};
 };
-var elm$core$Maybe$Nothing = {$: 'Nothing'};
 var elm$core$Result$Err = function (a) {
 	return {$: 'Err', a: a};
 };
@@ -4902,6 +4902,42 @@ var elm$core$List$map = F2(
 			_List_Nil,
 			xs);
 	});
+var author$project$Main$getRangeTuples = function (index) {
+	return A2(
+		elm$core$List$map,
+		function (i) {
+			return _Utils_Tuple2(index, i);
+		},
+		A2(elm$core$List$range, 0, 99));
+};
+var elm$core$List$repeatHelp = F3(
+	function (result, n, value) {
+		repeatHelp:
+		while (true) {
+			if (n <= 0) {
+				return result;
+			} else {
+				var $temp$result = A2(elm$core$List$cons, value, result),
+					$temp$n = n - 1,
+					$temp$value = value;
+				result = $temp$result;
+				n = $temp$n;
+				value = $temp$value;
+				continue repeatHelp;
+			}
+		}
+	});
+var elm$core$List$repeat = F2(
+	function (n, value) {
+		return A3(elm$core$List$repeatHelp, _List_Nil, n, value);
+	});
+var author$project$Main$getAllRangedTuples = A2(
+	elm$core$List$indexedMap,
+	F2(
+		function (i, index) {
+			return author$project$Main$getRangeTuples(i);
+		}),
+	A2(elm$core$List$repeat, 100, 0));
 var elm$core$String$toInt = _String_toInt;
 var author$project$Main$parsePuzzleInput = function (string) {
 	return A2(
@@ -5391,14 +5427,12 @@ var author$project$Main$processMultiplyCode = F2(
 		var updatedOpCodesArray = A3(elm$core$Array$set, thirdPosition, finalValue, opCodeArray);
 		return elm$core$Array$toList(updatedOpCodesArray);
 	});
-var elm$core$Debug$log = _Debug_log;
 var author$project$Main$runProgram = function (intList) {
 	var chunked = A2(author$project$Chunk$chunk, 4, intList);
 	return A3(
 		elm$core$List$foldl,
 		F2(
 			function (opt, acc) {
-				var msg0 = A2(elm$core$Debug$log, 'acc', acc);
 				var algo = author$project$Main$detectAlgorithmFromRow(opt);
 				var processed = function () {
 					switch (algo.$) {
@@ -5415,33 +5449,115 @@ var author$project$Main$runProgram = function (intList) {
 		intList,
 		chunked);
 };
+var author$project$Main$NounVerbProgramResult = F3(
+	function (noun, verb, firstPosition) {
+		return {firstPosition: firstPosition, noun: noun, verb: verb};
+	});
+var author$project$Main$setNounAndVerbInMemory = F3(
+	function (noun, verb, intList) {
+		var array = elm$core$Array$fromList(intList);
+		var nounReplace = A3(elm$core$Array$set, 1, noun, array);
+		var verbReplace = A3(elm$core$Array$set, 2, verb, nounReplace);
+		return elm$core$Array$toList(verbReplace);
+	});
+var author$project$Main$tryManyNounsAndVerbs = F2(
+	function (intCodes, listOfTuples) {
+		return A3(
+			elm$core$List$foldl,
+			F2(
+				function (_n0, acc) {
+					var noun = _n0.a;
+					var verb = _n0.b;
+					var processedMemory = A3(author$project$Main$setNounAndVerbInMemory, noun, verb, intCodes);
+					var processedList = author$project$Main$runProgram(processedMemory);
+					var positionZero = A2(
+						elm$core$Maybe$withDefault,
+						0,
+						A2(
+							elm$core$Array$get,
+							0,
+							elm$core$Array$fromList(processedList)));
+					return _Utils_ap(
+						acc,
+						_List_fromArray(
+							[
+								A3(author$project$Main$NounVerbProgramResult, noun, verb, positionZero)
+							]));
+				}),
+			_List_Nil,
+			listOfTuples);
+	});
+var elm$core$Debug$log = _Debug_log;
+var elm$core$List$filter = F2(
+	function (isGood, list) {
+		return A3(
+			elm$core$List$foldr,
+			F2(
+				function (x, xs) {
+					return isGood(x) ? A2(elm$core$List$cons, x, xs) : xs;
+				}),
+			_List_Nil,
+			list);
+	});
 var author$project$Main$update = F2(
 	function (msg, model) {
-		if (msg.$ === 'LoadDefaultInput') {
-			return _Utils_Tuple2(
-				_Utils_update(
-					model,
-					{initialInput: author$project$Main$puzzleInput}),
-				elm$core$Platform$Cmd$none);
-		} else {
-			var intList = author$project$Main$parsePuzzleInput(model.initialInput);
-			var preProcessedIntList = author$project$Main$preProcessOptCodes(intList);
-			var processedList = author$project$Main$runProgram(preProcessedIntList);
-			var positionZero = A2(
-				elm$core$Maybe$withDefault,
-				0,
-				A2(
-					elm$core$Array$get,
+		switch (msg.$) {
+			case 'LoadDefaultInput':
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{initialInput: author$project$Main$puzzleInput}),
+					elm$core$Platform$Cmd$none);
+			case 'ParseInput':
+				var intList = author$project$Main$parsePuzzleInput(model.initialInput);
+				var preProcessedIntList = author$project$Main$preProcessOptCodes(intList);
+				var processedList = author$project$Main$runProgram(preProcessedIntList);
+				var positionZero = A2(
+					elm$core$Maybe$withDefault,
 					0,
-					elm$core$Array$fromList(processedList)));
-			var msg1 = A2(elm$core$Debug$log, 'positionZero:', positionZero);
-			return _Utils_Tuple2(
-				_Utils_update(
-					model,
-					{intCodes: intList, processedIntCodes: processedList}),
-				elm$core$Platform$Cmd$none);
+					A2(
+						elm$core$Array$get,
+						0,
+						elm$core$Array$fromList(processedList)));
+				var msg1 = A2(elm$core$Debug$log, 'positionZero:', positionZero);
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{intCodes: intList, processedIntCodes: processedList}),
+					elm$core$Platform$Cmd$none);
+			default:
+				var targetNounVerbProgramResult = elm$core$List$head(
+					A2(
+						elm$core$List$filter,
+						function (result) {
+							return result.firstPosition === 19690720;
+						},
+						A3(
+							elm$core$List$foldl,
+							F2(
+								function (tupleList, acc) {
+									return _Utils_ap(
+										acc,
+										A2(author$project$Main$tryManyNounsAndVerbs, model.intCodes, tupleList));
+								}),
+							_List_Nil,
+							author$project$Main$getAllRangedTuples)));
+				var challenge2Answer = function () {
+					if (targetNounVerbProgramResult.$ === 'Nothing') {
+						return 0;
+					} else {
+						var target = targetNounVerbProgramResult.a;
+						return (100 * target.noun) + target.verb;
+					}
+				}();
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{challenge2Answer: challenge2Answer, targetNounVerbProgramResult: targetNounVerbProgramResult}),
+					elm$core$Platform$Cmd$none);
 		}
 	});
+var author$project$Main$DetermineNounAndVerb = {$: 'DetermineNounAndVerb'};
 var author$project$Main$LoadDefaultInput = {$: 'LoadDefaultInput'};
 var author$project$Main$ParseInput = {$: 'ParseInput'};
 var elm$core$Basics$identity = function (x) {
@@ -6154,7 +6270,7 @@ var author$project$Main$view = function (model) {
 											]),
 										_List_fromArray(
 											[
-												elm$html$Html$text('???')
+												elm$html$Html$text('Calculate Opcodes')
 											]))
 									])),
 								author$project$Main$flexGrow2,
@@ -6181,7 +6297,15 @@ var author$project$Main$view = function (model) {
 											{
 												onClick: elm$core$Maybe$Just(author$project$Main$ParseInput)
 											}),
-										'Parse Input')
+										'Parse Input'),
+										A2(
+										author$project$Material$Button$textButton,
+										_Utils_update(
+											author$project$Material$Button$buttonConfig,
+											{
+												onClick: elm$core$Maybe$Just(author$project$Main$DetermineNounAndVerb)
+											}),
+										'Find Noun and Verb')
 									]))
 							])),
 						A2(
@@ -6253,7 +6377,87 @@ var author$project$Main$view = function (model) {
 												elm$html$Html$text(
 												author$project$Main$processedOptCodesToString(model.processedIntCodes))
 											]))
-									]))
+									])),
+								function () {
+								var _n0 = model.targetNounVerbProgramResult;
+								if (_n0.$ === 'Nothing') {
+									return A2(elm$html$Html$div, _List_Nil, _List_Nil);
+								} else {
+									var target = _n0.a;
+									return A2(
+										elm$html$Html$div,
+										_List_fromArray(
+											[
+												A2(elm$html$Html$Attributes$style, 'width', '120px')
+											]),
+										_List_fromArray(
+											[
+												A2(
+												elm$html$Html$div,
+												_List_Nil,
+												_List_fromArray(
+													[
+														A2(
+														elm$html$Html$b,
+														_List_Nil,
+														_List_fromArray(
+															[
+																elm$html$Html$text('Noun:')
+															]))
+													])),
+												A2(
+												elm$html$Html$div,
+												_List_Nil,
+												_List_fromArray(
+													[
+														elm$html$Html$text(
+														elm$core$String$fromInt(target.noun))
+													])),
+												A2(
+												elm$html$Html$div,
+												_List_Nil,
+												_List_fromArray(
+													[
+														A2(
+														elm$html$Html$b,
+														_List_Nil,
+														_List_fromArray(
+															[
+																elm$html$Html$text('Verb:')
+															]))
+													])),
+												A2(
+												elm$html$Html$div,
+												_List_Nil,
+												_List_fromArray(
+													[
+														elm$html$Html$text(
+														elm$core$String$fromInt(target.verb))
+													])),
+												A2(
+												elm$html$Html$div,
+												_List_Nil,
+												_List_fromArray(
+													[
+														A2(
+														elm$html$Html$b,
+														_List_Nil,
+														_List_fromArray(
+															[
+																elm$html$Html$text('Challenge 2 Answer:')
+															]))
+													])),
+												A2(
+												elm$html$Html$div,
+												_List_Nil,
+												_List_fromArray(
+													[
+														elm$html$Html$text(
+														elm$core$String$fromInt(model.challenge2Answer))
+													]))
+											]));
+								}
+							}()
 							]))
 					]))
 			]));
