@@ -14,7 +14,7 @@
     "@babel/preset-env": "^7.7.4",
     "babel-loader": "^8.0.6",
     "elm-doc-preview": "^3.0.4",
-    "standard-version": "^7.0.1",
+    "standard-version": "^8.0.1",
     "ts-loader": "^6.2.1",
     "typescript": "^3.7.2",
     "webpack": "^4.41.2",
